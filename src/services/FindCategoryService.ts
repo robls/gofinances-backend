@@ -16,8 +16,8 @@ class FindCategoryService {
       const newCategory = categoriesRepository.create({
         title: category_title,
       });
-      await categoriesRepository.save(newCategory);
-      return newCategory;
+      const returnNewCategory = await categoriesRepository.save(newCategory);
+      return returnNewCategory;
     }
 
     return insertedCategory;

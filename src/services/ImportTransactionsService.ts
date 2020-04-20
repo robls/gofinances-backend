@@ -1,34 +1,46 @@
 import fs from 'fs';
-import neatCsv from 'neat-csv';
+import parse from 'csv-parse';
 
 import Transaction from '../models/Transaction';
 import uploadConfig from '../config/upload';
 import CreateTransactionService from './CreateTransactionService';
 
-interface Request {
-  title: string;
-  value: number;
-  type: 'income' | 'outcome';
-  category: string;
-}
-
 class ImportTransactionsService {
-  async execute(filename: string): Promise<Transaction[]> {
-    const csv = fs.readFileSync(`${uploadConfig.directory}/${filename}`);
+  public async execute(filename: string): Promise<Transaction[]> {
     const createTransactionService = new CreateTransactionService();
+    const results: Transaction[] = [];
+    const filepath = `${uploadConfig.directory}/${filename}`;
+    const output = [];
 
-    async function readCSV(content) {
-      const result = await neatCsv(content, {
-        mapHeaders: ({ header }) => header.trim(),
-        mapValues: ({ value }) => value.trim(),
-      });
-      return result;
+    const fileStream = fs
+      .createReadStream(filepath)
+      .pipe(parse({ delimiter: ', ' }));
+
+    for await (const data of fileStream) {
+      output.push(data);
     }
 
-    const neatResults = await readCSV(csv);
-    const results: Transaction[] = [];
+    delete output[0];
 
-    // return results;
+    for await (const row of output) {
+      if (row) {
+        const [title, type, value, category] = row;
+        const parsedValue = parseFloat(value);
+        const transaction = await createTransactionService.execute({
+          title,
+          type,
+          value: parsedValue,
+          category,
+        });
+        results.push(transaction);
+      }
+    }
+
+    fs.unlink(filepath, function error(err) {
+      if (err) throw err;
+    });
+
+    return results;
   }
 }
 
