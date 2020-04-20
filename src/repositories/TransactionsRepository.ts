@@ -24,17 +24,6 @@ class TransactionsRepository extends Repository<Transaction> {
       return acc - transaction.value;
     }, 0);
 
-    // transactions.map(transaction => {
-    //   if (transaction.type === 'income') {
-    //     balance.income += transaction.value;
-    //     balance.total += transaction.value;
-    //   } else {
-    //     balance.outcome += transaction.value;
-    //     balance.total -= transaction.value;
-    //   }
-    //   return balance;
-    // });
-
     return balance;
   }
 }
